@@ -204,7 +204,7 @@ func (s *Server) eventStreamHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func dockerClient() *dcli.Client {
-	client, err := dcli.NewClient("http://127.0.0.1:4243")
+	client, err := dcli.NewClient("unix:///var/run/docker.sock")
 	if err != nil {
 		panic(err)
 	}

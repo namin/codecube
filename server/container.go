@@ -16,7 +16,7 @@ func tailOutput(name string, r io.Reader) {
 }
 
 func notmain() {
-	client, err := dcli.NewClient("http://127.0.0.1:4243")
+	client, err := dcli.NewClient("unix:///var/run/docker.sock")
 	if err != nil {
 		panic(err)
 	}
