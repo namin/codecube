@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"fmt"
 	"errors"
-	"github.com/dotcloud/docker"
 	dcli "github.com/fsouza/go-dockerclient"
 	"io"
 	"io/ioutil"
@@ -113,13 +112,13 @@ func (r *Runner) createSrcFile() (string, error) {
 }
 
 func (r *Runner) createContainer(srcFile string) error {
-	volPathOpts := docker.NewPathOpts()
-	volPathOpts.Set("/code")
+	volPathOpts := make(map[string]struct{})
+	volPathOpts["/code"] = struct{}{}
 	uidStr := strconv.Itoa(r.Uid)
-	config := &docker.Config{
+	config := &dcli.Config{
 		CpuShares:       1,
 		Memory:			 50e6,
-		Tty:             true,
+		// Tty:             true,
 		OpenStdin:       false,
 		Volumes:         volPathOpts,
 		Cmd:             []string{path.Join("/code", srcFile), uidStr},
@@ -127,7 +126,7 @@ func (r *Runner) createContainer(srcFile string) error {
 		NetworkDisabled: true,
 	}
 
-	container, err := r.client.CreateContainer(config)
+	container, err := r.client.CreateContainer(dcli.CreateContainerOptions{Config:config})
 	if err != nil {
 		return err
 	}
@@ -141,7 +140,7 @@ func (r *Runner) startContainer() error {
 		return errors.New("Can't start a container before it is created")
 	}
 
-	hostConfig := &docker.HostConfig{
+	hostConfig := &dcli.HostConfig{
 		Binds: []string{fmt.Sprintf("%s:/code", r.CodeDir)},
 	}
 	if err := r.client.StartContainer(r.ContainerId, hostConfig); err != nil {
@@ -179,7 +178,7 @@ func (r *Runner) waitForExit(timeoutMs time.Duration) (bool, int) {
 
 func (r *Runner) cleanup() {
 	log.Println("Removing container")
-	if err := r.client.RemoveContainer(r.ContainerId); err != nil {
+	if err := r.client.RemoveContainer(dcli.RemoveContainerOptions{ID:r.ContainerId}); err != nil {
 		log.Printf("Couldn't remove container %s (%v)\n", r.ContainerId, err)
 	}
 
